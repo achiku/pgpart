@@ -22,8 +22,55 @@ pip install pgpart
 
 ## Usage
 
-### Monthly Range Partition
+##### Create/Drop Monthly Range Partition
 
 ```
-pgpart rangep generate -n sale -k sold_at -s 201501 -e 201602
+$ pgpart rangep create --parent-name sale --partition-key sold_at --start-month 201608 --end-month 201611
+    CREATE TABLE sale_201608 (
+        CHECK (sold_at >= '2016-08-01' AND sold_at < '2016-09-01')
+    ) INHERITS (sale);
+
+    CREATE TABLE sale_201609 (
+        CHECK (sold_at >= '2016-09-01' AND sold_at < '2016-10-01')
+    ) INHERITS (sale);
+
+    CREATE TABLE sale_201610 (
+        CHECK (sold_at >= '2016-10-01' AND sold_at < '2016-11-01')
+    ) INHERITS (sale);
+
+    CREATE OR REPLACE FUNCTION sale_insert_trigger()
+    RETURNS TRIGGER AS $$
+
+    BEGIN
+    IF (NEW.sold_at >= '2016-08-01' AND NEW.sold_at < '2016-09-01') THEN
+        INSERT INTO sale_201608 VALUES (NEW.*);
+    ELSIF (NEW.sold_at >= '2016-09-01' AND NEW.sold_at < '2016-10-01') THEN
+        INSERT INTO sale_201609 VALUES (NEW.*);
+    ELSIF (NEW.sold_at >= '2016-10-01' AND NEW.sold_at < '2016-11-01') THEN
+        INSERT INTO sale_201610 VALUES (NEW.*);
+    ELSE
+        RAISE EXCEPTION 'Date out of range. Fix the sale_insert_trigger() function.';
+    END IF;
+
+    RETURN NULL;
+    END;
+    $$
+    LANGUAGE plpgsql;
+
+    CREATE TRIGGER insert_sale_trigger
+        BEFORE INSERT ON sale
+        FOR EACH ROW EXECUTE PROCEDURE sale_insert_trigger();
+```
+
+```
+$ pgpart drop create --parent-name sale --partition-key sold_at --start-month 201608 --end-month 201611
+    DROP TABLE sale_201608 ;
+
+    DROP TABLE sale_201609 ;
+
+    DROP TABLE sale_201610 ;
+
+    DROP TRIGGER insert_sale_trigger ON sale ;
+
+    DROP FUNCTION sale_insert_trigger() ;
 ```

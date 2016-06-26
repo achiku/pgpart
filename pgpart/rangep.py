@@ -49,18 +49,18 @@ def drop(parent_name, partition_key, start_month, end_month):
     for d in duration:
         click.echo(drop_table_tmpl.format(
             parent_name=parent_name, year_month='{:%Y%m}'.format(d['start'])))
-    click.echo(drop_function_tmpl.format(parent_name=parent_name))
     click.echo(drop_trigger_tmpl.format(parent_name=parent_name))
+    click.echo(drop_function_tmpl.format(parent_name=parent_name))
 
 
 drop_table_tmpl = """
     DROP TABLE {parent_name}_{year_month} ;"""
 
 drop_function_tmpl = """
-    DROP FUNCTION {parent_name}_insert_trigger ;"""
+    DROP FUNCTION {parent_name}_insert_trigger() ;"""
 
 drop_trigger_tmpl = """
-    DROP TRIGGER insert_{parent_name}_trigger ;"""
+    DROP TRIGGER insert_{parent_name}_trigger ON {parent_name} ;"""
 
 partitioned_table_tmpl = """
     CREATE TABLE {parent_name}_{year_month} (
