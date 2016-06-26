@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/achiku/pgpart.svg?branch=master)](https://travis-ci.org/achiku/pgpart)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/achiku/pgpart/master/LICENSE)
+[![Requirements Status](https://requires.io/github/achiku/pgpart/requirements.svg?branch=master)](https://requires.io/github/achiku/pgpart/requirements/?branch=master)
 
 ## Description
 
