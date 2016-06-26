@@ -11,12 +11,7 @@ Creating PostgreSQL partition table DDL should be easier.
 
 ## Why created
 
-Unlike MySQL and Oracle, PostgreSQL uses table inheritance and trigger (or rule) to realize horizontal table partitioning. Writing child tables with check constraints and triggers by hands is boring, and dangerous at the same time. This cli tool generates child tables/trigger DDL so that developers don't have to spend time to write/check DDLs for partitioning.
-
-
-## Limitation
-
-This tool is created just for generating table partitioning DDLs, and does not provide functionality to version control DDLs. Developers should consider using different tools, like alembic + SQLAlchemy, to manage DDLs in your VCS.
+Unlike MySQL and Oracle, PostgreSQL uses table inheritance and triggers (or rules) to realize horizontal table partitioning. Manually writing child tables with check constraints, and triggers with bunch of if-else statements is boring, time cunsuming, and error-prone at the same time. Given parent table name, partition key name, and time range, this tool generates child tables/trigger DDL so that developers don't have to spend too much time on writing/checking partitioning DDLs.
 
 
 ## Installation
