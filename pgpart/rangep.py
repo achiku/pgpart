@@ -16,10 +16,10 @@ def validate_month(ctx, param, value):
         dt = datetime.strptime(value+"01", "%Y%m%d")
         return dt
     except ValueError:
-        raise click.BadParameter('date need to be in format YYYYMM')
+        raise click.BadParameter('month need to be in format YYYYMM')
 
 
-@cli.command(help='Generate range partition DDL')
+@cli.command(help='Generate monthly range partition DDL')
 @click.option('--parent-name', '-n', required=True, help='parent table name')
 @click.option('--partition-key', '-k', required=True, help='partition key column name')
 @click.option('--start-month', '-s',
