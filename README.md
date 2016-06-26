@@ -6,12 +6,12 @@
 
 ## Description
 
-Creating PostgreSQL partition table DDL should be easier.
+Creating PostgreSQL partitioned table DDLs should be easier.
 
 
 ## Why created
 
-Unlike MySQL and Oracle, PostgreSQL uses table inheritance and triggers (or rules) to realize horizontal table partitioning. Manually writing child tables with check constraints, and triggers with bunch of if-else statements is boring, time cunsuming, and error-prone at the same time. Given parent table name, partition key name, and time range, this tool generates child tables/trigger DDL so that developers don't have to spend too much time on writing/checking partitioning DDLs.
+Unlike MySQL and Oracle, PostgreSQL uses table inheritance and triggers (or rules) to realize horizontal table partitioning. Manually writing child tables with check constraints, and triggers with bunch of if-else statements is boring, time cunsuming, and error-prone. This tool generates child tables/trigger DDLs with given parent table name, partition key name, and time range, so that developers don't have to spend too much time on writing/checking partitioning DDLs.
 
 
 ## Installation
@@ -26,6 +26,9 @@ pip install pgpart
 
 ```
 $ pgpart rangep create --parent-name sale --partition-key sold_at --start-month 201608 --end-month 201611
+```
+
+```sql
     CREATE TABLE sale_201608 (
         CHECK (sold_at >= '2016-08-01' AND sold_at < '2016-09-01')
     ) INHERITS (sale);
@@ -64,6 +67,9 @@ $ pgpart rangep create --parent-name sale --partition-key sold_at --start-month 
 
 ```
 $ pgpart rangep drop --parent-name sale --partition-key sold_at --start-month 201608 --end-month 201611
+```
+
+```sql
     DROP TABLE sale_201608 ;
 
     DROP TABLE sale_201609 ;
@@ -74,3 +80,18 @@ $ pgpart rangep drop --parent-name sale --partition-key sold_at --start-month 20
 
     DROP FUNCTION sale_insert_trigger() ;
 ```
+
+
+##### Create/Drop Yearly Range Partition
+
+- not implemented yet
+
+
+##### Create/Drop Daily Range Partition
+
+- not implemented yet
+
+
+##### Create/Drop List Partition
+
+- not implemented yet
