@@ -19,14 +19,14 @@ def validate_month(ctx, param, value):
         raise click.BadParameter('month need to be in format YYYYMM')
 
 
-@cli.command(help='Generate monthly range partition DDL')
+@cli.command(help='Create monthly range partition DDL')
 @click.option('--parent-name', '-n', required=True, help='parent table name')
 @click.option('--partition-key', '-k', required=True, help='partition key column name')
 @click.option('--start-month', '-s',
               required=True, callback=validate_month, help='monthly range partition start date (YYYYMM)')
 @click.option('--end-month', '-e',
               required=True, callback=validate_month, help='monthly range partition end date (YYYYMM)')
-def generate(parent_name, partition_key, start_month, end_month):
+def create(parent_name, partition_key, start_month, end_month):
     """Generate monthly range partition DDL"""
     duration = month_timerange(start_month, end_month)
     table_ddls = generate_partitioned_table_ddl(parent_name, partition_key, duration)
@@ -34,7 +34,33 @@ def generate(parent_name, partition_key, start_month, end_month):
 
     click.echo('\n'.join(table_ddls))
     click.echo(trigger_ddl)
+    click.echo(create_trigger_tmpl.format(parent_name=parent_name))
 
+
+@cli.command(help='Drop monthly range partition DDL')
+@click.option('--parent-name', '-n', required=True, help='parent table name')
+@click.option('--partition-key', '-k', required=True, help='partition key column name')
+@click.option('--start-month', '-s',
+              required=True, callback=validate_month, help='monthly range partition start date (YYYYMM)')
+@click.option('--end-month', '-e',
+              required=True, callback=validate_month, help='monthly range partition end date (YYYYMM)')
+def drop(parent_name, partition_key, start_month, end_month):
+    duration = month_timerange(start_month, end_month)
+    for d in duration:
+        click.echo(drop_table_tmpl.format(
+            parent_name=parent_name, year_month='{:%Y%m}'.format(d['start'])))
+    click.echo(drop_function_tmpl.format(parent_name=parent_name))
+    click.echo(drop_trigger_tmpl.format(parent_name=parent_name))
+
+
+drop_table_tmpl = """
+    DROP TABLE {parent_name}_{year_month} ;"""
+
+drop_function_tmpl = """
+    DROP FUNCTION {parent_name}_insert_trigger ;"""
+
+drop_trigger_tmpl = """
+    DROP TRIGGER insert_{parent_name}_trigger ;"""
 
 partitioned_table_tmpl = """
     CREATE TABLE {parent_name}_{year_month} (
@@ -45,7 +71,7 @@ trigger_conditions_tmpl = """
     {ifelse} (NEW.{partition_key} >= '{start_date}' NEW.{partition_key} < '{end_date}') THEN
         INSERT INTO {parent_name}_{year_month} VALUES (NEW.*);"""
 
-create_trigger_for_partitioned_table_tmpl = """
+create_function_for_partitioned_table_tmpl = """
     CREATE OR REPLACE FUNCTION {parent_name}_insert_trigger()
     RETURNS TRIGGER AS $$
 
@@ -56,6 +82,11 @@ create_trigger_for_partitioned_table_tmpl = """
     END;
     $$
     LANGUAGE plpgsql;"""
+
+create_trigger_tmpl = """
+    CREATE TRIGGER insert_{parent_name}_trigger
+        BEFORE INSERT ON measurement
+        FOR EACH ROW EXECUTE PROCEDURE {parent_name}_insert_trigger();"""
 
 
 def month_timerange(start_date, end_date):
@@ -102,7 +133,7 @@ def generate_trigger(parent_name, partition_key, month_range):
     cond = ''
     for c in generate_trigger_conditions(parent_name, partition_key, month_range):
         cond = cond + c
-    return create_trigger_for_partitioned_table_tmpl.format(
+    return create_function_for_partitioned_table_tmpl.format(
         parent_name=parent_name,
         conditions=cond,
     )
