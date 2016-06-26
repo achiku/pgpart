@@ -1,8 +1,40 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from typing import List
 
+import click
 from dateutil import relativedelta
+
+
+@click.group()
+def cli():
+    """Range partitioning CLI group"""
+    pass
+
+
+def validate_month(ctx, param, value):
+    try:
+        dt = datetime.strptime(value+"01", "%Y%m%d")
+        return dt
+    except ValueError:
+        raise click.BadParameter('date need to be in format YYYYMM')
+
+
+@cli.command(help='Generate range partition DDL')
+@click.option('--parent-name', '-n', required=True, help='parent table name')
+@click.option('--partition-key', '-k', required=True, help='partition key column name')
+@click.option('--start-month', '-s',
+              required=True, callback=validate_month, help='monthly range partition start date (YYYYMM)')
+@click.option('--end-month', '-e',
+              required=True, callback=validate_month, help='monthly range partition end date (YYYYMM)')
+def generate(parent_name, partition_key, start_month, end_month):
+    """Generate monthly range partition DDL"""
+    duration = month_timerange(start_month, end_month)
+    table_ddls = generate_partitioned_table_ddl(parent_name, partition_key, duration)
+    trigger_ddl = generate_trigger(parent_name, partition_key, duration)
+
+    click.echo('\n'.join(table_ddls))
+    click.echo(trigger_ddl)
+
 
 partitioned_table_tmpl = """
     CREATE TABLE {parent_name}_{year_month} (
@@ -26,7 +58,7 @@ create_trigger_for_partitioned_table_tmpl = """
     LANGUAGE plpgsql;"""
 
 
-def month_timerange(start_date: datetime, end_date: datetime) -> List:
+def month_timerange(start_date, end_date):
     intervals = []
     dt = start_date
     while dt != end_date:
@@ -36,7 +68,7 @@ def month_timerange(start_date: datetime, end_date: datetime) -> List:
     return intervals
 
 
-def generate_partitioned_table_ddl(parent_name: str, partition_key: str, month_range: List) -> List[str]:
+def generate_partitioned_table_ddl(parent_name, partition_key, month_range):
     ddls = []
     for d in month_range:
         ddl = partitioned_table_tmpl.format(
@@ -50,7 +82,7 @@ def generate_partitioned_table_ddl(parent_name: str, partition_key: str, month_r
     return ddls
 
 
-def generate_trigger_conditions(parent_name: str, partition_key: str, month_range: List) -> List[str]:
+def generate_trigger_conditions(parent_name, partition_key, month_range):
     conditions = []
     for i, d in enumerate(month_range):
         ifelse = 'IF' if i == 0 else 'ELSE'
@@ -66,7 +98,7 @@ def generate_trigger_conditions(parent_name: str, partition_key: str, month_rang
     return conditions
 
 
-def generate_trigger(parent_name: str, partition_key: str, month_range: List) -> str:
+def generate_trigger(parent_name, partition_key, month_range):
     cond = ''
     for c in generate_trigger_conditions(parent_name, partition_key, month_range):
         cond = cond + c
