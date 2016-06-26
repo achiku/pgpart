@@ -63,7 +63,7 @@ $ pgpart rangep create --parent-name sale --partition-key sold_at --start-month 
 ```
 
 ```
-$ pgpart drop create --parent-name sale --partition-key sold_at --start-month 201608 --end-month 201611
+$ pgpart rangep drop --parent-name sale --partition-key sold_at --start-month 201608 --end-month 201611
     DROP TABLE sale_201608 ;
 
     DROP TABLE sale_201609 ;
