@@ -1,0 +1,18 @@
+language: python
+python:
+  - "2.7"
+  - "3.4"
+  - "3.5.0b3"
+  - "3.5-dev"
+sudo: false
+# command to install dependencies
+cache:
+  directories:
+    - $HOME/.cache/pip
+install: 
+  - pip install pip --upgrade
+  - pip install -r requirements/development.txt
+  - pip install codecov
+  - pip install -e .
+# command to run tests
+script: py.test -v tests pgpart
