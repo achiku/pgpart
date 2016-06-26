@@ -38,7 +38,7 @@ def test_generate_partitioned_table_ddl():
     ddls = generate_partitioned_table_ddl(parent_name, partition_key, month_range)
     s = """
     CREATE TABLE sale_201611 (
-        CHECK (sold_at >= '2016-11-01' and sold_at < '2016-12-01')
+        CHECK (sold_at >= '2016-11-01' AND sold_at < '2016-12-01')
     ) INHERITS (sale);"""
 
     assert len(ddls) == 1
@@ -55,10 +55,10 @@ def test_generate_trigger_condition():
     ]
     conditions = generate_trigger_conditions(parent_name, partition_key, month_range)
     s = """
-    IF (NEW.sold_at >= '2016-11-01' NEW.sold_at < '2016-12-01') THEN
+    IF (NEW.sold_at >= '2016-11-01' AND NEW.sold_at < '2016-12-01') THEN
         INSERT INTO sale_201611 VALUES (NEW.*);
 
-    ELSE (NEW.sold_at >= '2016-12-01' NEW.sold_at < '2017-01-01') THEN
+    ELSIF (NEW.sold_at >= '2016-12-01' AND NEW.sold_at < '2017-01-01') THEN
         INSERT INTO sale_201612 VALUES (NEW.*);"""
 
     assert len(conditions) == 2
@@ -79,10 +79,12 @@ def test_generate_trigger():
     RETURNS TRIGGER AS $$
 
     BEGIN
-    IF (NEW.sold_at >= '2016-11-01' NEW.sold_at < '2016-12-01') THEN
+    IF (NEW.sold_at >= '2016-11-01' AND NEW.sold_at < '2016-12-01') THEN
         INSERT INTO sale_201611 VALUES (NEW.*);
-    ELSE (NEW.sold_at >= '2016-12-01' NEW.sold_at < '2017-01-01') THEN
+    ELSIF (NEW.sold_at >= '2016-12-01' AND NEW.sold_at < '2017-01-01') THEN
         INSERT INTO sale_201612 VALUES (NEW.*);
+    ELSE
+        RAISE EXCEPTION 'Date out of range. Fix the sale_insert_trigger() function.';
     END IF;
 
     RETURN NULL;

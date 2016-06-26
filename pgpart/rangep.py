@@ -64,11 +64,11 @@ drop_trigger_tmpl = """
 
 partitioned_table_tmpl = """
     CREATE TABLE {parent_name}_{year_month} (
-        CHECK ({partition_key} >= '{start_date}' and {partition_key} < '{end_date}')
+        CHECK ({partition_key} >= '{start_date}' AND {partition_key} < '{end_date}')
     ) INHERITS ({parent_name});"""
 
 trigger_conditions_tmpl = """
-    {ifelse} (NEW.{partition_key} >= '{start_date}' NEW.{partition_key} < '{end_date}') THEN
+    {ifelse} (NEW.{partition_key} >= '{start_date}' AND NEW.{partition_key} < '{end_date}') THEN
         INSERT INTO {parent_name}_{year_month} VALUES (NEW.*);"""
 
 create_function_for_partitioned_table_tmpl = """
@@ -76,6 +76,8 @@ create_function_for_partitioned_table_tmpl = """
     RETURNS TRIGGER AS $$
 
     BEGIN{conditions}
+    ELSE
+        RAISE EXCEPTION 'Date out of range. Fix the {parent_name}_insert_trigger() function.';
     END IF;
 
     RETURN NULL;
@@ -85,7 +87,7 @@ create_function_for_partitioned_table_tmpl = """
 
 create_trigger_tmpl = """
     CREATE TRIGGER insert_{parent_name}_trigger
-        BEFORE INSERT ON measurement
+        BEFORE INSERT ON {parent_name}
         FOR EACH ROW EXECUTE PROCEDURE {parent_name}_insert_trigger();"""
 
 
@@ -116,7 +118,7 @@ def generate_partitioned_table_ddl(parent_name, partition_key, month_range):
 def generate_trigger_conditions(parent_name, partition_key, month_range):
     conditions = []
     for i, d in enumerate(month_range):
-        ifelse = 'IF' if i == 0 else 'ELSE'
+        ifelse = 'IF' if i == 0 else 'ELSIF'
         condition = trigger_conditions_tmpl.format(
             ifelse=ifelse,
             parent_name=parent_name,
