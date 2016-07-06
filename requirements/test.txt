@@ -1,6 +1,6 @@
 pytest==2.9.2
 isort==4.2.5
 flake8==2.6.2
-pytest-cov==2.2.1
+pytest-cov==2.3.0
 pytest-isort==0.1.0
 pytest-pep8==1.0.6
